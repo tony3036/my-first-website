@@ -5,7 +5,11 @@ from bs4 import BeautifulSoup
 # 1. 設定你要爬取的股票代號列表
 stock = ["1101", "2330"]
 
-# 2. 迴圈依序爬取股價並發送 Telegram 訊息
+# 2. 設定你的 Telegram Bot Token 與 Chat ID
+token = "8839048485:AAF6sz6zVRvjVcgs9yQnfrUs-e98GNx5eoY"
+chat_id = "6066323383"
+
+# 3. 迴圈依序爬取股價並發送 Telegram 訊息
 for i in range(len(stock)):
   # 取得目前的股票代號
   stockid = stock[i]
@@ -35,10 +39,6 @@ for i in range(len(stock)):
 
     # 組合回報訊息
     message = f"股票 {stockid} 即時股價為 {price}"
-
-    # 設定你的 Telegram Bot Token 與 Chat ID
-    token = "輸入你的_bot_token"  # 例如: "6718510325:AAF1by3LnmV2nPit9NBtxKdExUK1MEOISY"
-    chat_id = "輸入你的_telegram_id"  # 例如: "123456789"
 
     # 發送訊息至 Telegram
     telegram_url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
