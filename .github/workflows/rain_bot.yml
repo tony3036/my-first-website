@@ -1,0 +1,29 @@
+name: Daily Rain Alert Bot
+
+on:
+  workflow_dispatch: # 支援手動隨時觸發測試
+  schedule:
+    - cron: '0 22 * * *' # 每天 UTC 時間 22:00（即台灣時間早上 6:00）自動執行
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run rain check script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python rain_bot.py
