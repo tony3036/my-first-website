@@ -24,7 +24,7 @@ def check_rain_probability():
     max_prob = data["daily"]["precipitation_probability_max"][0]
     print(f"今日最高降雨機率: {max_prob}%")
 
-    # 無論機率高低，直接組合訊息並發送
+    # 判斷並組裝訊息
     if max_prob is not None:
       if max_prob > 70:
         message = (
@@ -35,6 +35,7 @@ def check_rain_probability():
     else:
       message = "⚠️ 天氣回報：今天無法取得明確的降雨機率數據。"
 
+    # 務必呼叫這行才會真正傳送到 Telegram
     send_telegram_message(message)
 
   except Exception as e:
