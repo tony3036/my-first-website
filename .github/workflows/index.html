@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧通勤與數據儀表板</title>
+    <!-- 引入 Bootstrap 5 CSS 確保 RWD 手機/電腦排版完美適應 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 Chart.js 供未來 MySQL 數據圖表使用 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+
+    <!-- 導覽列 (RWD 響應式) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">📊 數據儀表板與最新消息</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="navbar-link text-white text-decoration-none px-3" href="#news">最新消息</a></li>
+                    <li class="nav-item"><a class="navbar-link text-white text-decoration-none px-3" href="#charts">資料庫圖表</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容區塊 -->
+    <div class="container my-5">
+        
+        <!-- 1. 最新消息區塊 -->
+        <section id="news" class="mb-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title h5 mb-0">🔥 最新消息 (Latest News)</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🚀 系統已成功透過 GitHub Pages 完成部署上線！</span>
+                            <span class="badge bg-secondary">2026-09-21</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>📈 準備對接 MySQL 資料庫，動態載入後端數據。</span>
+                            <span class="badge bg-secondary">開發中</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 未來連接 MySQL 資料庫圖表區塊 -->
+        <section id="charts">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title h5 mb-0">📊 MySQL 資料庫數據圖表預覽</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">此圖表未來可透過 AJAX / Fetch API 連接後端 PHP/Node.js，將 MySQL 資料庫中的數據動態呈現在此：</p>
+                    <!-- RWD 畫布容器 -->
+                    <div class="chart-container" style="position: relative; height:350vh; max-height:400px;">
+                        <canvas id="myDatabaseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- 頁尾 -->
+    <footer class="text-center py-4 text-muted">
+        <p>&copy; 2026 Smart Commute & RWD Dashboard System.</p>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 圖表初始化腳本 (Chart.js) -->
+    <script>
+        // 模擬從 MySQL 撈取並透過 API 傳遞過來的資料
+        const ctx = document.getElementById('myDatabaseChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'bar', // 可自由更換為 'line' (折線圖), 'pie' (圓餅圖) 等
+            data: {
+                labels: ['一月', '二月', '三月', '四月', '五月', '六月'],
+                datasets: [{
+                    label: 'MySQL 資料庫模擬數據 (例如：每月通勤次數)',
+                    data: [12, 19, 3, 5, 2, 3],
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
+</body>
+</html>
