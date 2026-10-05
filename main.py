@@ -131,7 +131,7 @@ plt.title('各商品淨銷售額長條圖', fontsize=14)
 plt.xlabel('淨銷售額 (NTD)')
 plt.ylabel('商品名稱')
 plt.tight_layout()
-plt.savefig("chart_2_product_revenue.png"', dpi=300)
+plt.savefig("chart_2_product_revenue.png", dpi=300)
 plt.close()
 
 # 圖表三：各分類淨銷售額占比圓餅圖
