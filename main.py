@@ -1,33 +1,36 @@
 import json
+import os
 import pandas as pd
 from sqlalchemy import create_engine
 
 # ==================== 1. 資料庫連線設定 ====================
-# 請將下方的 帳號、密碼、主機位址、port、資料庫名稱 換成你實際的 MySQL 資訊
 DB_USER = '你的帳號'
 DB_PASSWORD = '你的密碼'
 DB_HOST = '你的主機位址'
 DB_PORT = '3306'
 DB_NAME = '你的資料庫名稱'
 
-# 建立 SQLAlchemy 連線引擎
 db_connection_str = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
-engine = create_engine(db_connection_str)
 
-# 從資料庫中讀取更新版與原始版兩張資料表
+df_up = pd.DataFrame()
+df_orig = pd.DataFrame()
+
+# ==================== 2. 嘗試從資料庫讀取，失敗則讀 CSV ====================
 try:
-  print('正在從資料庫讀取銷售數據...')
+  print('正在嘗試從資料庫讀取銷售數據...')
+  engine = create_engine(db_connection_str)
   df_up = pd.read_sql('SELECT * FROM sales_updated_300', con=engine)
   df_orig = pd.read_sql('SELECT * FROM sales_original_300', con=engine)
   print('資料庫讀取成功！')
 except Exception as e:
-  print(f'資料庫連線或讀取失敗，請檢查連線資訊：{e}')
-  # 如果連線失敗，可在此處預設空 DataFrame 避免程式崩潰
-  df_up = pd.DataFrame()
-  df_orig = pd.DataFrame()
+  print(f'資料庫連線失敗（{e}），改為從本機 CSV 讀取備援資料...')
+  if os.path.exists('sales_updated_300.csv'):
+    df_up = pd.read_csv('sales_updated_300.csv')
+  if os.path.exists('sales_original_300.csv'):
+    df_orig = pd.read_csv('sales_original_300.csv')
 
 
-# ==================== 2. 資料處理與清洗函數 ====================
+# ==================== 3. 資料處理與清洗函數 ====================
 def process_data(df):
   if df.empty:
     return {
@@ -68,7 +71,7 @@ def process_data(df):
 data_updated = process_data(df_up)
 data_original = process_data(df_orig)
 
-# ==================== 3. 生成互動式網頁 index.html ====================
+# ==================== 4. 生成互動式網頁 index.html ====================
 html_content = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -117,7 +120,6 @@ html_content = f"""<!DOCTYPE html>
 
         let currentData = dataUpdated;
 
-        // 初始化圖表
         const ctxDaily = document.getElementById('dailyChart').getContext('2d');
         const ctxProduct = document.getElementById('productChart').getContext('2d');
         const ctxCategory = document.getElementById('categoryChart').getContext('2d');
@@ -178,17 +180,14 @@ html_content = f"""<!DOCTYPE html>
                 btnUpdated.classList.remove('active');
             }}
 
-            // 更新折線圖
             dailyChart.data.labels = currentData.dates;
             dailyChart.data.datasets[0].data = currentData.daily_rev;
             dailyChart.update();
 
-            // 更新長條圖
             productChart.data.labels = currentData.products;
             productChart.data.datasets[0].data = currentData.prod_rev;
             productChart.update();
 
-            // 更新圓餅圖
             categoryChart.data.labels = currentData.categories;
             categoryChart.data.datasets[0].data = currentData.cat_rev;
             categoryChart.update();
@@ -201,4 +200,4 @@ html_content = f"""<!DOCTYPE html>
 with open('index.html', 'w', encoding='utf-8') as f:
   f.write(html_content)
 
-print('已成功從資料庫讀取資料，並產出帶有互動按鈕與三大圖表的 index.html！')
+print('網頁生成完畢！')
