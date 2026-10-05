@@ -1,25 +1,44 @@
 import json
-import os
 import pandas as pd
+from sqlalchemy import create_engine
 
-# 讀取兩個檔案的資料（確保專案內同時有這兩個 CSV）
-file_updated = (
-    'sales_updated_300.csv'
-    if os.path.exists('sales_updated_300.csv')
-    else 'sales_original_300.csv'
-)
-file_original = (
-    'sales_original_300.csv'
-    if os.path.exists('sales_original_300.csv')
-    else 'sales_updated_300.csv'
-)
+# ==================== 1. 資料庫連線設定 ====================
+# 請將下方的 帳號、密碼、主機位址、port、資料庫名稱 換成你實際的 MySQL 資訊
+DB_USER = '你的帳號'
+DB_PASSWORD = '你的密碼'
+DB_HOST = '你的主機位址'
+DB_PORT = '3306'
+DB_NAME = '你的資料庫名稱'
 
-df_up = pd.read_csv(file_updated)
-df_orig = pd.read_csv(file_original)
+# 建立 SQLAlchemy 連線引擎
+db_connection_str = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
+engine = create_engine(db_connection_str)
+
+# 從資料庫中讀取更新版與原始版兩張資料表
+try:
+  print('正在從資料庫讀取銷售數據...')
+  df_up = pd.read_sql('SELECT * FROM sales_updated_300', con=engine)
+  df_orig = pd.read_sql('SELECT * FROM sales_original_300', con=engine)
+  print('資料庫讀取成功！')
+except Exception as e:
+  print(f'資料庫連線或讀取失敗，請檢查連線資訊：{e}')
+  # 如果連線失敗，可在此處預設空 DataFrame 避免程式崩潰
+  df_up = pd.DataFrame()
+  df_orig = pd.DataFrame()
 
 
-# 處理資料的函數
+# ==================== 2. 資料處理與清洗函數 ====================
 def process_data(df):
+  if df.empty:
+    return {
+        'dates': [],
+        'daily_rev': [],
+        'products': [],
+        'prod_rev': [],
+        'categories': [],
+        'cat_rev': [],
+    }
+
   if 'net_revenue' not in df.columns:
     if 'unit_price' in df.columns and 'quantity' in df.columns:
       returned = (
@@ -49,7 +68,7 @@ def process_data(df):
 data_updated = process_data(df_up)
 data_original = process_data(df_orig)
 
-# 產出包含切換按鈕與三大互動圖表的 HTML
+# ==================== 3. 生成互動式網頁 index.html ====================
 html_content = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -182,4 +201,4 @@ html_content = f"""<!DOCTYPE html>
 with open('index.html', 'w', encoding='utf-8') as f:
   f.write(html_content)
 
-print('已成功更新，圓餅圖與切換按鈕皆已完整加入！')
+print('已成功從資料庫讀取資料，並產出帶有互動按鈕與三大圖表的 index.html！')
