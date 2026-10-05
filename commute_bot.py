@@ -1,9 +1,5 @@
-import os
+from notify import send_telegram_message
 import requests
-
-# 依照規範：透過環境變數安全讀取 Telegram Token 與 Chat ID，不直接寫入程式碼
-TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 
 def get_commute_advice():
@@ -62,7 +58,7 @@ def get_commute_advice():
         "🏙️ 【智慧通勤風險通知】",
         f"🌡️ 今日最高溫：{max_temp}°C",
         f"☔️ 最高降雨機率：{max_rain_prob}%",
-        f" AQI 空氣品質指數：{current_aqi}",
+        f"AQI 空氣品質指數：{current_aqi}",
         "---------------------",
         "💡 通勤建議：",
     ]
@@ -100,19 +96,8 @@ def get_commute_advice():
     send_telegram_message(error_msg)
 
 
-def send_telegram_message(message):
-  if not TOKEN or not CHAT_ID:
-    print("錯誤：未設定 Telegram Token 或 Chat ID 環境變數。")
-    return
-
-  telegram_url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-  payload = {"chat_id": CHAT_ID, "text": message}
-  response = requests.post(telegram_url, data=payload)
-  if response.status_code == 200:
-    print("Telegram 通知發送成功！")
-  else:
-    print(f"Telegram 通知發送失敗: {response.text}")
-
+if __name__ == "__main__":
+  get_commute_advice()
 
 if __name__ == "__main__":
   get_commute_advice()
