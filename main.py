@@ -1,117 +1,158 @@
+import json
 import os
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-import numpy as np
 import pandas as pd
 
-# 自動尋找系統內建的中文字型，避免中文亂碼
-chosen_font = 'sans-serif'
-for f in fm.fontManager.ttflist:
-  name = f.name.lower()
-  if any(
-      k in name
-      for k in ['noto sans cjk', 'microsoft jhenghei', 'wqy', 'hei', 'kai']
-  ):
-    chosen_font = f.name
-    break
-
-plt.rcParams['font.family'] = chosen_font
-plt.rcParams['axes.unicode_minus'] = False
-
-# 自動動態偵測輸入的檔案是哪一個
-if os.path.exists('sales_updated_300.csv'):
-  target_file = 'sales_updated_300.csv'
-  dataset_label = '更新版銷售數據 (sales_updated_300)'
-elif os.path.exists('sales_original_300.csv'):
-  target_file = 'sales_original_300.csv'
-  dataset_label = '原始版銷售數據 (sales_original_300)'
-else:
-  target_file = 'sales_updated_300.csv'
-  dataset_label = '更新版銷售數據 (sales_updated_300)'
-
-print(f'正在讀取輸入檔案: {target_file} 進行動態圖表繪製...')
-df = pd.read_csv(target_file)
-
-# 確保淨營收欄位存在
-if 'net_revenue' not in df.columns:
-  if 'unit_price' in df.columns and 'quantity' in df.columns:
-    returned = df['returned_quantity'] if 'returned_quantity' in df.columns else 0
-    df['net_revenue'] = df['unit_price'] * (df['quantity'] - returned)
-  else:
-    df['net_revenue'] = df.iloc[:, -1]
-
-# 1. 繪製並儲存每日淨銷售額折線圖
-daily_rev = df.groupby('sale_date')['net_revenue'].sum()
-plt.figure(figsize=(10, 4))
-plt.plot(daily_rev.index, daily_rev.values, marker='o', color='b', linewidth=2)
-plt.title(f'每日淨銷售額折線圖 ({dataset_label})', fontsize=12)
-plt.xlabel('日期')
-plt.ylabel('淨銷售額 (NTD)')
-plt.xticks(rotation=45)
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.tight_layout()
-plt.savefig('chart_1_daily_revenue.png', dpi=300)
-plt.close()
-
-# 2. 繪製並儲存各商品淨銷售額長條圖
-product_rev = (
-    df.groupby('product_name')['net_revenue'].sum().sort_values(ascending=True)
+# 讀取兩個檔案的資料（確保專案內同時有這兩個 CSV）
+file_updated = (
+    'sales_updated_300.csv'
+    if os.path.exists('sales_updated_300.csv')
+    else 'sales_original_300.csv'
 )
-plt.figure(figsize=(10, 4))
-product_rev.plot(kind='barh', color='teal')
-plt.title(f'各商品淨銷售額長條圖 ({dataset_label})', fontsize=12)
-plt.xlabel('淨銷售額 (NTD)')
-plt.ylabel('商品名稱')
-plt.tight_layout()
-plt.savefig('chart_2_product_revenue.png', dpi=300)
-plt.close()
-
-# 3. 繪製並儲存各分類淨銷售額占比圓餅圖
-category_rev = df.groupby('category')['net_revenue'].sum()
-plt.figure(figsize=(6, 6))
-plt.pie(
-    category_rev.values,
-    labels=category_rev.index,
-    autopct='%1.1f%%',
-    startangle=140,
-    colors=['#ff9999', '#66b3ff', '#99ff99'],
+file_original = (
+    'sales_original_300.csv'
+    if os.path.exists('sales_original_300.csv')
+    else 'sales_updated_300.csv'
 )
-plt.title(f'各分類淨銷售額占比圓餅圖 ({dataset_label})', fontsize=12)
-plt.tight_layout()
-plt.savefig('chart_3_category_share.png', dpi=300)
-plt.close()
 
-# 自動生成 index.html 網頁
+df_up = pd.read_csv(file_updated)
+df_orig = pd.read_csv(file_original)
+
+
+# 處理資料的函數
+def process_data(df):
+  if 'net_revenue' not in df.columns:
+    if 'unit_price' in df.columns and 'quantity' in df.columns:
+      returned = (
+          df['returned_quantity'] if 'returned_quantity' in df.columns else 0
+      )
+      df['net_revenue'] = df['unit_price'] * (df['quantity'] - returned)
+    else:
+      df['net_revenue'] = df.iloc[:, -1]
+
+  # 1. 每日銷售額
+  daily = df.groupby('sale_date')['net_revenue'].sum().reset_index()
+  # 2. 商品銷售額
+  prod = df.groupby('product_name')['net_revenue'].sum().reset_index()
+  # 3. 分類占比
+  cat = df.groupby('category')['net_revenue'].sum().reset_index()
+
+  return {
+      'dates': daily['sale_date'].tolist(),
+      'daily_rev': daily['net_revenue'].tolist(),
+      'products': prod['product_name'].tolist(),
+      'prod_rev': prod['net_revenue'].tolist(),
+      'categories': cat['category'].tolist(),
+      'cat_rev': cat['net_revenue'].tolist(),
+  }
+
+
+data_updated = process_data(df_up)
+data_original = process_data(df_orig)
+
+# 產出包含切換按鈕與 JavaScript 動態圖表的 HTML
 html_content = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>銷售數據分析儀表板</title>
+    <title>銷售數據動態切換儀表板</title>
+    <!-- 引入 Chart.js 互動圖表庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {{ font-family: '{chosen_font}', Arial, sans-serif; margin: 40px; background-color: #f9f9f9; color: #333; text-align: center; }}
+        body {{ font-family: Arial, sans-serif; margin: 30px; background-color: #f4f7f6; color: #333; text-align: center; }}
         h1 {{ color: #2c3e50; }}
-        .badge {{ background-color: #3498db; color: white; padding: 6px 12px; border-radius: 4px; font-size: 14px; }}
-        .chart-container {{ margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }}
-        img {{ max-width: 100%; height: auto; border-radius: 4px; }}
+        .btn-container {{ margin: 20px 0; }}
+        button {{ background-color: #3498db; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin: 0 5px; transition: 0.3s; }}
+        button:hover {{ background-color: #2980b9; }}
+        button.active {{ background-color: #e67e22; }}
+        .badge {{ background-color: #2ecc71; color: white; padding: 6px 12px; border-radius: 4px; font-size: 14px; }}
+        .chart-box {{ width: 80%; max-width: 800px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
     </style>
 </head>
 <body>
     <h1>銷售數據分析儀表板</h1>
-    <p>目前展示資料來源：<span class="badge">{dataset_label}</span></p>
-    <p>提示：按下 F5 重新整理即可載入最新圖表。</p>
+    <p>目前展示資料來源：<span id="currentSource" class="badge">更新版銷售數據 (sales_updated_300)</span></p>
     
-    <div class="chart-container">
-        <h3>1. 每日淨銷售額折線圖</h3>
-        <img src="chart_1_daily_revenue.png" alt="每日淨銷售額">
+    <div class="btn-container">
+        <button id="btnUpdated" class="active" onclick="switchData('updated')">切換至更新版數據</button>
+        <button id="btnOriginal" onclick="switchData('original')">切換至原始版數據</button>
     </div>
-    <div class="chart-container">
-        <h3>2. 各商品淨銷售額長條圖</h3>
-        <img src="chart_2_product_revenue.png" alt="各商品淨銷售額">
+
+    <div class="chart-box">
+        <h3>每日淨銷售額折線圖</h3>
+        <canvas id="dailyChart"></canvas>
     </div>
-    <div class="chart-container">
-        <h3>3. 各分類淨銷售額占比圓餅圖</h3>
-        <img src="chart_3_category_share.png" alt="各分類淨銷售額占比">
+
+    <div class="chart-box">
+        <h3>各商品淨銷售額長條圖</h3>
+        <canvas id="productChart"></canvas>
     </div>
+
+    <script>
+        const dataUpdated = {json.dumps(data_updated, ensure_ascii=False)};
+        const dataOriginal = {json.dumps(data_original, ensure_ascii=False)};
+
+        let currentData = dataUpdated;
+
+        // 初始化圖表
+        const ctxDaily = document.getElementById('dailyChart').getContext('2d');
+        const ctxProduct = document.getElementById('productChart').getContext('2d');
+
+        let dailyChart = new Chart(ctxDaily, {{
+            type: 'line',
+            data: {{
+                labels: currentData.dates,
+                datasets: [{{
+                    label: '淨銷售額 (NTD)',
+                    data: currentData.daily_rev,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }}]
+            }}
+        }});
+
+        let productChart = new Chart(ctxProduct, {{
+            type: 'bar',
+            data: {{
+                labels: currentData.products,
+                datasets: [{{
+                    label: '淨銷售額 (NTD)',
+                    data: currentData.prod_rev,
+                    backgroundColor: '#1abc9c'
+                }}]
+            }},
+            options: {{ indexAxis: 'y' }}
+        }});
+
+        function switchData(type) {{
+            const sourceSpan = document.getElementById('currentSource');
+            const btnUpdated = document.getElementById('btnUpdated');
+            const btnOriginal = document.getElementById('btnOriginal');
+
+            if (type === 'updated') {{
+                currentData = dataUpdated;
+                sourceSpan.innerText = "更新版銷售數據 (sales_updated_300)";
+                btnUpdated.classList.add('active');
+                btnOriginal.classList.remove('active');
+            }} else {{
+                currentData = dataOriginal;
+                sourceSpan.innerText = "原始版銷售數據 (sales_original_300)";
+                btnOriginal.classList.add('active');
+                btnUpdated.classList.remove('active');
+            }}
+
+            // 更新折線圖資料
+            dailyChart.data.labels = currentData.dates;
+            dailyChart.data.datasets[0].data = currentData.daily_rev;
+            dailyChart.update();
+
+            // 更新長條圖資料
+            productChart.data.labels = currentData.products;
+            productChart.data.datasets[0].data = currentData.prod_rev;
+            productChart.update();
+        }}
+    </script>
 </body>
 </html>
 """
@@ -119,4 +160,4 @@ html_content = f"""<!DOCTYPE html>
 with open('index.html', 'w', encoding='utf-8') as f:
   f.write(html_content)
 
-print('圖表與 index.html 網頁已成功根據輸入檔案動態更新！')
+print('已成功生成具備互動切換按鈕的 index.html 網頁！')
