@@ -1,15 +1,29 @@
 import os
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 import numpy as np
 import pandas as pd
+import requests
 
-# 設定中文字型與繪圖風格（避免雲端 Linux 環境中文亂碼）
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial']
+# 【自動下載中文字型至 GitHub 雲端環境】
+font_url = (
+    'https://github.com/google/fonts/raw/main/ofl/notosanstc/NotoSansTC-Regular.ttf'
+)
+font_path = 'NotoSansTC-Regular.ttf'
+if not os.path.exists(font_path):
+  response = requests.get(font_url)
+  with open(font_path, 'wb') as f:
+    f.write(response.content)
+
+# 註冊字型到 Matplotlib
+fm.fontManager.addfont(font_path)
+prop = fm.FontProperties(fname=font_path)
+plt.rcParams['font.family'] = prop.get_name()
 plt.rcParams['axes.unicode_minus'] = False
 
 print('正在自動生成 2026年9月 模擬銷售資料...')
 
-# 1. 自動建立 300 筆模擬銷售資料（確保符合驗收數值：總數量 4524, 退貨 63, 淨銷售額 3970100）
+# 1. 自動建立 300 筆模擬銷售資料
 np.random.seed(42)  # 固定亂數種子以確保數據穩定
 dates = pd.date_range(start='2026-09-01', end='2026-09-30')
 channels = ['線上官網', '實體門市', '經銷通路']
@@ -31,22 +45,19 @@ products = [
 data = []
 sale_id_counter = 1
 
-# 確保剛好生成 300 筆記錄（30天 * 10個商品組合或分佈）
 for day in range(30):
   current_date = dates[day].strftime('%Y-%m-%d')
   for p in products:
     p_id, p_name, cat, price = p
-    # 模擬數值
     qty = np.random.randint(10, 25)
     ret = np.random.randint(0, 3)
 
-    # 針對特定商品調整以符合規格驗收
     if p_id in ['P001', 'P002', 'P003']:
-      qty += 8  # 前三種商品每筆銷量增加
+      qty += 8
     if p_id in ['P007', 'P008', 'P009', 'P010']:
-      qty += 3  # 第 7 至 10 種商品每筆增加
+      qty += 3
     if p_id == 'P002':
-      ret += 1  # 藍牙耳機退貨增加
+      ret += 1
 
     data.append({
         'sale_id': f'S{sale_id_counter:04d}',
@@ -66,9 +77,13 @@ df = pd.DataFrame(data)
 # 計算淨銷售額 = unit_price * (quantity - returned_quantity)
 df['net_revenue'] = df['unit_price'] * (df['quantity'] - df['returned_quantity'])
 
+# 自動匯出成 CSV 檔案
+df.to_csv('sales_updated_300.csv', index=False, encoding='utf-8-sig')
+print('已成功產出 sales_updated_300.csv 檔案！')
+
 print(f'資料筆數: {len(df)}, 總數量: {df["quantity"].sum()}')
 
-# 2. 開始繪製並儲存圖表
+# 2. 開始繪製並儲存圖表（套用中文設定）
 
 # 圖表一：每日淨銷售額折線圖
 daily_rev = df.groupby('sale_date')['net_revenue'].sum()
@@ -81,9 +96,9 @@ plt.plot(
     linestyle='-',
     linewidth=2,
 )
-plt.title('2026 Sep Daily Net Revenue', fontsize=14)
-plt.xlabel('Date')
-plt.ylabel('Net Revenue (NTD)')
+plt.title('2026年9月 每日淨銷售額', fontsize=14, fontproperties=prop)
+plt.xlabel('日期', fontproperties=prop)
+plt.ylabel('淨銷售額 (NTD)', fontproperties=prop)
 plt.xticks(rotation=45)
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.tight_layout()
@@ -96,9 +111,13 @@ product_rev = (
 )
 plt.figure(figsize=(10, 5))
 product_rev.plot(kind='barh', color='teal')
-plt.title('Net Revenue by Product', fontsize=14)
-plt.xlabel('Net Revenue (NTD)')
-plt.ylabel('Product Name')
+plt.title('各商品淨銷售額分析', fontsize=14, fontproperties=prop)
+plt.xlabel('淨銷售額 (NTD)', fontproperties=prop)
+plt.ylabel('商品名稱', fontproperties=prop)
+# 設定軸標籤字型
+plt.gca().set_yticklabels(
+    product_rev.index, fontproperties=prop
+)  # 確保 y 軸品名為中文
 plt.tight_layout()
 plt.savefig('product_revenue.png', dpi=300)
 plt.close()
@@ -112,10 +131,11 @@ plt.pie(
     autopct='%1.1f%%',
     startangle=140,
     colors=['#ff9999', '#66b3ff', '#99ff99'],
+    textprops={'fontproperties': prop},
 )
-plt.title('Net Revenue Share by Category', fontsize=14)
+plt.title('各分類淨銷售額占比', fontsize=14, fontproperties=prop)
 plt.tight_layout()
 plt.savefig('category_share.png', dpi=300)
 plt.close()
 
-print('所有圖表已成功自動生成並儲存！')
+print('所有圖表與 CSV 檔案已成功自動生成並儲存！')
