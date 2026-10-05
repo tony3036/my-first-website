@@ -4,7 +4,7 @@ import matplotlib.font_manager as fm
 import numpy as np
 import pandas as pd
 
-# 自動尋找系統內建的中文字型
+# 自動尋找系統內建的中文字型，避免中文亂碼
 chosen_font = 'sans-serif'
 for f in fm.fontManager.ttflist:
   name = f.name.lower()
@@ -18,7 +18,7 @@ for f in fm.fontManager.ttflist:
 plt.rcParams['font.family'] = chosen_font
 plt.rcParams['axes.unicode_minus'] = False
 
-# 依據老師要求：自動判斷目前讀取的是 sales_updated_300 還是 sales_original_300
+# 自動動態偵測輸入的檔案是哪一個
 if os.path.exists('sales_updated_300.csv'):
   target_file = 'sales_updated_300.csv'
   dataset_label = '更新版銷售數據 (sales_updated_300)'
@@ -29,10 +29,10 @@ else:
   target_file = 'sales_updated_300.csv'
   dataset_label = '更新版銷售數據 (sales_updated_300)'
 
-print(f'正在讀取資料集: {target_file} 進行動態圖表繪製...')
+print(f'正在讀取輸入檔案: {target_file} 進行動態圖表繪製...')
 df = pd.read_csv(target_file)
 
-# 確保 net_revenue 欄位存在
+# 確保淨營收欄位存在
 if 'net_revenue' not in df.columns:
   if 'unit_price' in df.columns and 'quantity' in df.columns:
     returned = df['returned_quantity'] if 'returned_quantity' in df.columns else 0
@@ -119,4 +119,4 @@ html_content = f"""<!DOCTYPE html>
 with open('index.html', 'w', encoding='utf-8') as f:
   f.write(html_content)
 
-print('圖表與 index.html 網頁已成功動態更新！')
+print('圖表與 index.html 網頁已成功根據輸入檔案動態更新！')
