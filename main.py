@@ -118,7 +118,7 @@ plt.ylabel('淨銷售額 (NTD)')
 plt.xticks(rotation=45)
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.tight_layout()
-plt.savefig('daily_revenue.png', dpi=300)
+plt.savefig("chart_1_daily_revenue.png", dpi=300)
 plt.close()
 
 # 圖表二：各商品淨銷售額長條圖
@@ -131,7 +131,7 @@ plt.title('各商品淨銷售額長條圖', fontsize=14)
 plt.xlabel('淨銷售額 (NTD)')
 plt.ylabel('商品名稱')
 plt.tight_layout()
-plt.savefig('product_revenue.png', dpi=300)
+plt.savefig("chart_2_product_revenue.png"', dpi=300)
 plt.close()
 
 # 圖表三：各分類淨銷售額占比圓餅圖
@@ -146,7 +146,7 @@ plt.pie(
 )
 plt.title('各分類淨銷售額占比圓餅圖', fontsize=14)
 plt.tight_layout()
-plt.savefig('category_share.png', dpi=300)
+plt.savefig("chart_3_category_share.png", dpi=300)
 plt.close()
 
 print('所有圖表與 CSV 檔案已在 GitHub 雲端全部自動生成完畢！')
