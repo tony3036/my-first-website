@@ -106,7 +106,7 @@ plt.close()
 # 圖表三：各分類淨銷售額占比圓餅圖
 category_rev = df.groupby('category')['net_revenue'].sum()
 plt.figure(figsize=(6, 6))
-category_rev.pie(
+plt.pie(
     category_rev.values,
     labels=category_rev.index,
     autopct='%1.1f%%',
