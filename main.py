@@ -49,7 +49,7 @@ def process_data(df):
 data_updated = process_data(df_up)
 data_original = process_data(df_orig)
 
-# 產出包含切換按鈕與 JavaScript 動態圖表的 HTML
+# 產出包含切換按鈕與三大互動圖表的 HTML
 html_content = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -65,7 +65,7 @@ html_content = f"""<!DOCTYPE html>
         button:hover {{ background-color: #2980b9; }}
         button.active {{ background-color: #e67e22; }}
         .badge {{ background-color: #2ecc71; color: white; padding: 6px 12px; border-radius: 4px; font-size: 14px; }}
-        .chart-box {{ width: 80%; max-width: 800px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+        .chart-box {{ width: 80%; max-width: 700px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
     </style>
 </head>
 <body>
@@ -78,13 +78,18 @@ html_content = f"""<!DOCTYPE html>
     </div>
 
     <div class="chart-box">
-        <h3>每日淨銷售額折線圖</h3>
+        <h3>1. 每日淨銷售額折線圖</h3>
         <canvas id="dailyChart"></canvas>
     </div>
 
     <div class="chart-box">
-        <h3>各商品淨銷售額長條圖</h3>
+        <h3>2. 各商品淨銷售額長條圖</h3>
         <canvas id="productChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+        <h3>3. 各分類淨銷售額占比圓餅圖</h3>
+        <canvas id="categoryChart"></canvas>
     </div>
 
     <script>
@@ -96,6 +101,7 @@ html_content = f"""<!DOCTYPE html>
         // 初始化圖表
         const ctxDaily = document.getElementById('dailyChart').getContext('2d');
         const ctxProduct = document.getElementById('productChart').getContext('2d');
+        const ctxCategory = document.getElementById('categoryChart').getContext('2d');
 
         let dailyChart = new Chart(ctxDaily, {{
             type: 'line',
@@ -125,6 +131,17 @@ html_content = f"""<!DOCTYPE html>
             options: {{ indexAxis: 'y' }}
         }});
 
+        let categoryChart = new Chart(ctxCategory, {{
+            type: 'pie',
+            data: {{
+                labels: currentData.categories,
+                datasets: [{{
+                    data: currentData.cat_rev,
+                    backgroundColor: ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#c2c2f0']
+                }}]
+            }}
+        }});
+
         function switchData(type) {{
             const sourceSpan = document.getElementById('currentSource');
             const btnUpdated = document.getElementById('btnUpdated');
@@ -142,15 +159,20 @@ html_content = f"""<!DOCTYPE html>
                 btnUpdated.classList.remove('active');
             }}
 
-            // 更新折線圖資料
+            // 更新折線圖
             dailyChart.data.labels = currentData.dates;
             dailyChart.data.datasets[0].data = currentData.daily_rev;
             dailyChart.update();
 
-            // 更新長條圖資料
+            // 更新長條圖
             productChart.data.labels = currentData.products;
             productChart.data.datasets[0].data = currentData.prod_rev;
             productChart.update();
+
+            // 更新圓餅圖
+            categoryChart.data.labels = currentData.categories;
+            categoryChart.data.datasets[0].data = currentData.cat_rev;
+            categoryChart.update();
         }}
     </script>
 </body>
@@ -160,4 +182,4 @@ html_content = f"""<!DOCTYPE html>
 with open('index.html', 'w', encoding='utf-8') as f:
   f.write(html_content)
 
-print('已成功生成具備互動切換按鈕的 index.html 網頁！')
+print('已成功更新，圓餅圖與切換按鈕皆已完整加入！')
