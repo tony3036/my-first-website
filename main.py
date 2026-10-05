@@ -18,7 +18,7 @@ for f in fm.fontManager.ttflist:
 plt.rcParams['font.family'] = chosen_font
 plt.rcParams['axes.unicode_minus'] = False
 
-# 根據要求 4：判斷目前讀取的是哪一個資料集（支援 sales_updated_300 或 sales_original_300）
+# 依據老師要求：自動判斷目前讀取的是 sales_updated_300 還是 sales_original_300
 if os.path.exists('sales_updated_300.csv'):
   target_file = 'sales_updated_300.csv'
   dataset_label = '更新版銷售數據 (sales_updated_300)'
@@ -26,10 +26,8 @@ elif os.path.exists('sales_original_300.csv'):
   target_file = 'sales_original_300.csv'
   dataset_label = '原始版銷售數據 (sales_original_300)'
 else:
-  # 若皆不存在則預設建立並使用 updated
   target_file = 'sales_updated_300.csv'
   dataset_label = '更新版銷售數據 (sales_updated_300)'
-  # (可依需求建立預設資料...)
 
 print(f'正在讀取資料集: {target_file} 進行動態圖表繪製...')
 df = pd.read_csv(target_file)
@@ -40,9 +38,9 @@ if 'net_revenue' not in df.columns:
     returned = df['returned_quantity'] if 'returned_quantity' in df.columns else 0
     df['net_revenue'] = df['unit_price'] * (df['quantity'] - returned)
   else:
-    df['net_revenue'] = df.iloc[:, -1]  # 容錯處理
+    df['net_revenue'] = df.iloc[:, -1]
 
-# 2. 繪製並儲存三張標準圖表（確保檔名維持字母順序）
+# 1. 繪製並儲存每日淨銷售額折線圖
 daily_rev = df.groupby('sale_date')['net_revenue'].sum()
 plt.figure(figsize=(10, 4))
 plt.plot(daily_rev.index, daily_rev.values, marker='o', color='b', linewidth=2)
@@ -55,6 +53,7 @@ plt.tight_layout()
 plt.savefig('chart_1_daily_revenue.png', dpi=300)
 plt.close()
 
+# 2. 繪製並儲存各商品淨銷售額長條圖
 product_rev = (
     df.groupby('product_name')['net_revenue'].sum().sort_values(ascending=True)
 )
@@ -67,6 +66,7 @@ plt.tight_layout()
 plt.savefig('chart_2_product_revenue.png', dpi=300)
 plt.close()
 
+# 3. 繪製並儲存各分類淨銷售額占比圓餅圖
 category_rev = df.groupby('category')['net_revenue'].sum()
 plt.figure(figsize=(6, 6))
 plt.pie(
@@ -81,7 +81,7 @@ plt.tight_layout()
 plt.savefig('chart_3_category_share.png', dpi=300)
 plt.close()
 
-# 3. 自動生成符合要求 2 的 index.html 網頁檔案
+# 自動生成 index.html 網頁
 html_content = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -98,7 +98,7 @@ html_content = f"""<!DOCTYPE html>
 <body>
     <h1>銷售數據分析儀表板</h1>
     <p>目前展示資料來源：<span class="badge">{dataset_label}</span></p>
-    <p>提示：重新整理 (F5) 即可載入最新圖表與數據。</p>
+    <p>提示：按下 F5 重新整理即可載入最新圖表。</p>
     
     <div class="chart-container">
         <h3>1. 每日淨銷售額折線圖</h3>
@@ -119,4 +119,4 @@ html_content = f"""<!DOCTYPE html>
 with open('index.html', 'w', encoding='utf-8') as f:
   f.write(html_content)
 
-print('圖表與 index.html 網頁已成功依據目前資料集動態更新！')
+print('圖表與 index.html 網頁已成功動態更新！')
