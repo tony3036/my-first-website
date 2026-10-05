@@ -3,7 +3,7 @@ name: Daily Rain Alert Bot
 on:
   workflow_dispatch: # 支援手動隨時觸發測試
   schedule:
-    - cron: '0 22 * * *' # 每天 UTC 時間 22:00（即台灣時間早上 6:00）自動執行
+    - cron: '0 21 * * *' # 每天 UTC 時間 22:00（即台灣時間早上 6:00）自動執行
 
 jobs:
   run-bot:
