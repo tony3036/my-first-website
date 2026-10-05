@@ -4,8 +4,5 @@
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add chart_1_daily_revenue.png chart_2_product_revenue.png chart_3_category_share.png
           git commit -m "chore: auto-generate sales charts via GitHub Actions" || exit 0
-          
-          # 【關鍵這行】推送前先拉取並整合雲端更新，避免衝突被拒絕
           git pull --rebase origin main
-          
           git push
